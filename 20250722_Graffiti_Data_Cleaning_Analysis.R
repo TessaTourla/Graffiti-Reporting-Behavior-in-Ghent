@@ -56,6 +56,10 @@ library(car)        # Variance Inflation Factor (VIF) tests
 library(flextable)  # Create formatted tables
 library(officer)    # Export to Word documents
 
+install.packages("showtext")  # één keer installeren
+
+library(showtext)
+font_add("Times New Roman", regular = "C:/Windows/Fonts/times.ttf")
 # ===============================================================================
 # SECTION 2: OUTPUT FOLDER MANAGEMENT FUNCTIONS
 # ===============================================================================
@@ -119,11 +123,15 @@ custom_save <- function(data, folder, name, type = "csv", ...) {
   return(filepath)
 }
 
-
-# NOTE: Each time you run this script, a new output folder will be created with today's date.
-#       This ensures that results from different days are saved separately and organized.
 # Create the output folder for this analysis session
 output_folder <- make_folder()
+
+# setting all output to Times New Roman 
+
+theme_set(theme_minimal(base_family = "Times New Roman"))
+
+
+set_flextable_defaults(font.family = "Times New Roman")
 
 # ===============================================================================
 # SECTION 3: DATA IMPORT AND INITIAL CLEANING
@@ -145,7 +153,6 @@ df_complete <- df_raw |>
 # ===============================================================================
 
 # Create age variable and rename key variables for easier analysis
-# NOTE: You will need to update the variable names (Q4, Q2, Q6, Q7) to match your actual SPSS variable names
 df_clean <- df_complete |>
   mutate(
     # Calculate age from birth year (assuming current year is 2025)
@@ -163,17 +170,17 @@ df_clean <- df_complete |>
   )
 df_clean <- df_clean |> 
   mutate(
-    gender = haven::as_factor(gender)  # maakt labels bruikbaar in R
+    gender = haven::as_factor(gender)  
   )
 
 df_clean <- df_clean |> 
   mutate(
-    housing = haven::as_factor(housing)  # maakt labels bruikbaar in R
+    housing = haven::as_factor(housing) 
   )
 
 df_clean <- df_clean |> 
   mutate(
-    education = haven::as_factor(education)  # maakt labels bruikbaar in R
+    education = haven::as_factor(education) 
   )
 
 # Recode gender into 3 groups
@@ -226,9 +233,8 @@ housing_table <- prop.table(table(df_clean$housing_en)) * 100
 education_table <- prop.table(table(df_clean$education_en)) * 100
 
 
-# NOTE : This is just the sample table, you have to include more variables in this table.
 # Build comprehensive summary table
-# This table will be exported to Word for your report
+# This table will be exported to Word 
 summary_table <- tibble(
   Variable = c(
     "Age", 
@@ -324,7 +330,6 @@ custom_save(ft, output_folder, "summary_table", type = "docx")
 # ===============================================================================
 
 # Define the Likert scale items for graffiti perception and reporting
-# NOTE: Update these variable names to match your actual SPSS variables
 likert_vars_q9 <- paste0("Q9_", c(1, 2, 3, 4, 6, 7))     # Graffiti perception items
 likert_vars_q10 <- paste0("Q10_", c(1, 2, 3, 4, 6, 7))   # street art perception items
 likert_vars_q18 <- paste0("Q18_", c(1, 2, 3, 4, 5, 6))   # Graffiti reporting items
@@ -421,11 +426,6 @@ summary(model_perception)
 # ===============================================================================
 # SECTION 8B: MODEL RESULTS REPORTING AND FLEXTABLE EXPORT (PERCEPTION MODEL)
 # ===============================================================================
-# - Always report the fixed effects (coefficients, SE, t, p) for each predictor.
-# - Report the variance of the random effect (sector).
-# - Report model fit (marginal and conditional R²).
-# - Interpret significant predictors in plain language (see example below).
-# - Use the flextable below to create a formatted table for your report.
 
 # Extract fixed effects summary
 fixed_effects <- summary(model_perception)$coefficients
@@ -471,20 +471,7 @@ ft_model <- flextable::flextable(model_table) |>
 # Save as Word document in output folder
 # IMPORTANT: If you get an error about the file being open, please close the Word document before running this code again.
 # R cannot overwrite a .docx file that is open in Microsoft Word or another program.
-# Note: body_add_flextable() is from the flextable package, not officer. Use flextable::body_add_flextable.
 custom_save(ft_model, output_folder, "model_perception_results", type = "docx")
-
-# Example reporting paragraph for model reporting
-
-# We fitted a linear mixed-effects model to examine predictors of negative graffiti perception, 
-# including age, gender, education, and housing, with a random intercept for sector. In this model, 
-#higher scores reflect more positive perceptions of graffiti. Older participants reported 
-#less negative perceptions (b = -0.05, p = .018), meaning that as age increases, 
-#participants tend to view graffiti less negatively. Participants identifying as 'other' gender 
-#reported significantly lower perception scores (b = -13.96, p = .016), indicating a more positive or tolerant 
-# view of graffiti. In contrast, those renting an apartment reported higher scores (b = 1.74, p = .020), 
-# reflecting a more negative perception. The random effect for sector indicated moderate between-sector variability (variance = 0.33)
-
 
 
 # Extract random effects (sector-level effects)
@@ -522,8 +509,10 @@ perception_plot <- ggplot(ranefs_perception, aes(x = factor(sector, levels = 0:8
     title = "Graffiti Perception Deviation by Sector",
     subtitle = "Positive values indicate more positive perception than average"
   ) +
-  theme_minimal(base_size = 13) +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  theme_minimal(base_size = 13,base_family = "Times New Roman") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        text = element_text(family = "Times New Roman")
+        )
 
 print(perception_plot)
 custom_save(perception_plot, output_folder, "graffiti_perception_by_sector", type = "png", width = 8, height = 6, dpi = 1200)
@@ -536,7 +525,8 @@ custom_save(perception_plot, output_folder, "graffiti_perception_by_sector", typ
 # 1. Linearity and Homoscedasticity
 # The residuals vs fitted plot should show random scatter (no patterns)
 png(file.path(output_folder, paste0(format(Sys.Date(), "%Y%m%d"), "_perception_model_diagnostics.png")), 
-    width = 800, height = 600)
+    width = 800, height = 600,
+    family = "Times New Roman")
 plot(model_perception, main = "Residuals vs Fitted: Perception Model")
 dev.off()
 
@@ -565,11 +555,8 @@ custom_save(linearity_plot, output_folder, "age_perception_linearity", type = "p
 # 4. Multicollinearity check
 vif_values <- vif(lm(graffiti_perception_sum ~ age + gender_en + education_en + housing_en, data = df_clean))
 # VIF values > 5 indicate problematic multicollinearity
-# (Silent: see object 'vif_values' for results)
-
 
 # 5. Outliers 
-# Model
 model_lm <- lm(graffiti_perception_sum ~ age + gender_en + education_en + housing_en, data = df_clean)
 
 # Standardized residuals calculations 
@@ -585,7 +572,6 @@ resid_df <- data.frame(
 resid_df$Outlier_Flag <- ifelse(abs(resid_df$Standardized_Residual) > 2, "Possible", "OK")
 resid_df$Severe_Outlier <- ifelse(abs(resid_df$Standardized_Residual) > 3, "Likely", "")
 
-# Export to CSV
 write.csv(
   dw_df,
   file = file.path(output_folder, paste0(format(Sys.Date(), "%Y%m%d"), "_reporting_standardized_residuals_output.csv")),
@@ -659,8 +645,10 @@ if (sector_variance < 0.01) {
       title = "Graffiti Reporting Deviation by Sector",
       subtitle = "Positive values indicate more reporting than average"
     ) +
-    theme_minimal(base_size = 13) +
-    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+    theme_minimal(base_size = 13,base_family = "Times New Roman") +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1),
+          text = element_text(family = "Times New Roman")
+          )
   
   print(reporting_plot)
   custom_save(reporting_plot, output_folder, "graffiti_reporting_by_sector", type = "png", width = 8, height = 6, dpi = 1200)
@@ -701,15 +689,12 @@ custom_save(reporting_linearity_plot, output_folder, "age_reporting_linearity", 
 
 # 4. Multicollinearity check
 vif_values_reporting <- vif(lm(graffiti_reporting_sum ~ age + graffiti_perception_sum + gender_en + education_en + housing_en, data = df_clean))
-# (Silent: see object 'vif_values_reporting' for results)
-
 
 # 5. Durbin-Watson test (independence of residuals)
 library(lmtest)
 model_lm_reporting <- lm(graffiti_reporting_sum ~ age + graffiti_perception_sum + gender_en + education_en + housing_en, data = df_clean)
 dw_result_reporting <- dwtest(model_lm_reporting)
 
-# Zet testresultaten om naar data frame
 dw_df_reporting <- data.frame(
   Statistic = as.numeric(dw_result_reporting$statistic),
   P_value = as.numeric(dw_result_reporting$p.value),
@@ -726,19 +711,15 @@ write.csv(
 
 # 6. Outliers 
 
-# Lineair model gebruiken (zonder random effects)
 model_lm_reporting <- lm(graffiti_reporting_sum ~ age + graffiti_perception_sum + gender_en + education_en + housing_en, data = df_clean)
 
-# Standardized residuals berekenen
 standardized_resid_reporting <- rstandard(model_lm_reporting)
 
-# Dataframe met observaties en residuen
 resid_df_reporting <- data.frame(
   Observation = 1:length(standardized_resid_reporting),
   Standardized_Residual = standardized_resid_reporting
 )
 
-# Outlier flags toevoegen
 resid_df_reporting$Outlier_Flag <- ifelse(abs(resid_df_reporting$Standardized_Residual) > 2, "Possible", "OK")
 resid_df_reporting$Severe_Outlier <- ifelse(abs(resid_df_reporting$Standardized_Residual) > 3, "Likely", "")
 
@@ -753,7 +734,6 @@ write.csv(
 # SECTION 12: SPATIAL DATA VISUALIZATION
 # ===============================================================================
 # Load shapefile for Ghent statistical sectors
-# NOTE: Make sure the shapefile folder is in your Data directory
 sf_gent_sectors <- st_read(here("Data", "statistische-sectoren-gent", "statistische-sectoren-gent.shp"))
 
 # Filter to sectors starting with "A" (presumably a specific area of interest)
@@ -772,13 +752,15 @@ sf_gent_filtered <- sf_gent_A |>
 # Create map with both sector codes and sector names
 map_plot <- ggplot(sf_gent_filtered) +
   geom_sf(fill = "lightblue", color = "white", size = 0.5) +
-  geom_sf_text(aes(label = paste0(sectorcode, "\n")), size = 3, color = "black") +
+  geom_sf_text(family = "Times New Roman", aes(label = paste0(sectorcode, "\n")), size = 3, color = "black") +
   labs(
+    family = "Times New Roman",
     title = "Study Area: Statistical Sectors in Ghent",
     subtitle = paste("Analysis includes", nrow(sf_gent_filtered), "sectors")
   ) +
   theme_void() +
   theme(
+    text = element_text(family = "Times New Roman"),
     plot.title = element_text(hjust = 0.5),
     plot.subtitle = element_text(hjust = 0.5)
   )
@@ -842,7 +824,6 @@ if (!is.null(vif_values) && length(vif_values) > 0 && length(names(vif_values)) 
 } else {
   warning("No VIF values calculated for perception model. VIF table will not be saved.")
 }
-
 
 
 # --- 4. Perception Model: Correlation Matrix ---
@@ -960,7 +941,7 @@ df_long <- df_clean %>%
   pivot_longer(cols = everything(),
                names_to = "Series",
                values_to = "Category") %>%
-  filter(!is.na(Category))  # verwijder lege rijen
+  filter(!is.na(Category))  
 
 df_long <- df_long %>%
   mutate(Category = case_when(
@@ -968,7 +949,7 @@ df_long <- df_long %>%
     Category == "Ja, ik heb een melding gemaakt bij Stad Gent" ~ "Yes, I made a notification to Stad Gent",
     Category == "Ja, ik heb het gerapporteerd aan de politie" ~ "Yes, I have reported it to the police",
     Category == "Ja, ik heb een melding gemaakt bij de verhuurder" ~ "Yes, I made a notification to the landlord",
-    TRUE ~ Category  # behoud rest
+    TRUE ~ Category  
   ))
 
 df_long$Category <- str_wrap(df_long$Category, width = 20)
@@ -983,18 +964,21 @@ df_counts <- df_long %>%
 
 reportingq11_plot <- ggplot(df_counts, aes(x = Category, y = n, group = Series)) +
   geom_col(fill = "steelblue", position = position_dodge(width = 0.9)) +
-  geom_text(aes(label = n, y = n / 2),   # label op de helft van de balkhoogte
+  geom_text(aes(label = n, y = n / 2),   
+            family = "Times New Roman",
             position = position_dodge(width = 0.9),
             color = "Black",
             size = 3) +
   labs(
     x = "Category",
-    y = "Count"
+    y = "Count",
+    title = "Graffiti Notifications made to the Authorities" 
   ) +
-  theme_minimal() +  # eventueel toevoegen voor strak uiterlijk
+  theme_minimal(base_family = "Times New Roman") +  
   theme(
-    panel.grid.major.x = element_blank(),  # grote verticale lijnen weg
-    panel.grid.minor.x = element_blank()   # kleine verticale lijnen weg
+    text = element_text(family = "Times New Roman"),
+    panel.grid.major.x = element_blank(),  
+    panel.grid.minor.x = element_blank()   
   )
 
 print(reportingq11_plot)
@@ -1017,7 +1001,7 @@ df_long <- df_clean %>%
   pivot_longer(cols = everything(),
                names_to = "Series",
                values_to = "Category") %>%
-  filter(!is.na(Category))  # verwijder NA rijen
+  filter(!is.na(Category))  
 
 df_long <- df_long %>%
   mutate(Category = case_when(
@@ -1028,7 +1012,7 @@ df_long <- df_long %>%
     Category == "Graffiti is lelijk" ~ "Graffiti is ugly",
     Category == "Het is een misdrijf en het is een goede daad om het te melden" ~ "It is a crime and it is the right thing to do",
     Category == "Andere:" ~ "Other",
-    TRUE ~ Category  # behoud rest
+    TRUE ~ Category  
   ))
 
 df_long$Category <- str_wrap(df_long$Category, width = 20)
@@ -1040,21 +1024,23 @@ df_long$Category <- factor(df_long$Category, levels = sort(unique(df_long$Catego
 df_counts <- df_long %>%
   count(Category, Series)
 
-# Plot met labels exact in het midden van de balken
 motivators_plot <- ggplot(df_counts, aes(x = Category, y = n, group = Series)) +
   geom_col(fill = "steelblue", position = position_dodge(width = 0.9)) +
-  geom_text(aes(label = n, y = n / 2),   # label op de helft van de balkhoogte
+  geom_text(aes(label = n, y = n / 2),   
+            family = "Times New Roman",
             position = position_dodge(width = 0.9),
             color = "Black",
             size = 3) +
   labs(
     x = "Category",
-    y = "Count"
+    y = "Count",
+    title = "Reason given to Report Graffiti"
   ) +
-  theme_minimal() +  # eventueel toevoegen voor strak uiterlijk
+  theme_minimal(base_family = "Times New Roman") +  
   theme(
-    panel.grid.major.x = element_blank(),  # grote verticale lijnen weg
-    panel.grid.minor.x = element_blank()   # kleine verticale lijnen weg
+    text = element_text(family = "Times New Roman"),
+    panel.grid.major.x = element_blank(),  
+    panel.grid.minor.x = element_blank()   
   )
 
 print(motivators_plot)
@@ -1077,7 +1063,7 @@ df_long <- df_clean %>%
   pivot_longer(cols = everything(),
                names_to = "Series",
                values_to = "Category") %>%
-  filter(!is.na(Category))  # verwijder NA rijen
+  filter(!is.na(Category)) 
 
 df_long <- df_long %>%
   mutate(Category = case_when(
@@ -1086,7 +1072,7 @@ df_long <- df_long %>%
     Category == "Ik denk dat het deel uit maakt van een cultuur" ~ "I think it is part of a culture",
     Category == "Er zijn andere dingen waar ik me zorgen over maak" ~ "I have better things to worry about",
     Category == "Andere:" ~ "Other",
-    TRUE ~ Category  # behoud rest
+    TRUE ~ Category  
   ))
 
 df_long$Category <- str_wrap(df_long$Category, width = 20)
@@ -1103,21 +1089,24 @@ df_long$Category <- factor(df_long$Category, levels = category_order)
 df_counts <- df_long %>%
   count(Category, Series)
 
-# Plot met labels exact in het midden van de balken
+
 demotivators_plot <- ggplot(df_counts, aes(x = Category, y = n, group = Series)) +
   geom_col(fill = "steelblue", position = position_dodge(width = 0.9)) +
-  geom_text(aes(label = n, y = n / 2),   # label op de helft van de balkhoogte
+  geom_text(aes(label = n, y = n / 2),
+            family = "Times New Roman",
             position = position_dodge(width = 0.9),
             color = "Black",
             size = 3) +
   labs(
     x = "Category",
-    y = "Count"
+    y = "Count",
+    title = "Reasons given to Not Report Graffiti" 
   ) +
-  theme_minimal() +  # eventueel toevoegen voor strak uiterlijk
+  theme_minimal(base_family = "Times New Roman") +  
   theme(
-    panel.grid.major.x = element_blank(),  # grote verticale lijnen weg
-    panel.grid.minor.x = element_blank()   # kleine verticale lijnen weg
+    text = element_text(family = "Times New Roman"),
+    panel.grid.major.x = element_blank(),  
+    panel.grid.minor.x = element_blank()   
   )
 
 print(demotivators_plot)
@@ -1141,13 +1130,13 @@ df_long <- df_clean %>%
   pivot_longer(cols = everything(),
                names_to = "Series",
                values_to = "Category") %>%
-  filter(!is.na(Category))  # verwijder lege rijen
+  filter(!is.na(Category))  
 
 df_long <- df_long %>%
   mutate(Category = case_when(
     Category == "Ja" ~ "Yes",
     Category == "Neen" ~ "No",
-    TRUE ~ Category  # behoud rest
+    TRUE ~ Category  
   ))
 
 
@@ -1163,18 +1152,21 @@ df_counts <- df_long %>%
 
 stadgent_plot <- ggplot(df_counts, aes(x = Category, y = n, group = Series)) +
   geom_col(fill = "steelblue", position = position_dodge(width = 0.9)) +
-  geom_text(aes(label = n, y = n / 2),   # label op de helft van de balkhoogte
+  geom_text(aes(label = n, y = n / 2),  
+            family = "Times New Roman",  
             position = position_dodge(width = 0.9),
             color = "Black",
             size = 3) +
   labs(
     x = "Category",
-    y = "Count"
+    y = "Count",
+    title = "Do you think that Removing Graffiti for Free by Stad Gent is a good idea?"
   ) +
-  theme_minimal() +  # eventueel toevoegen voor strak uiterlijk
+  theme_minimal(base_family = "Times New Roman") +  
   theme(
-    panel.grid.major.x = element_blank(),  # grote verticale lijnen weg
-    panel.grid.minor.x = element_blank()   # kleine verticale lijnen weg
+    text = element_text(family = "Times New Roman"),
+    panel.grid.major.x = element_blank(),  
+    panel.grid.minor.x = element_blank()   
   )
 
 print(stadgent_plot)
@@ -1196,13 +1188,13 @@ df_long <- df_clean %>%
   pivot_longer(cols = everything(),
                names_to = "Series",
                values_to = "Category") %>%
-  filter(!is.na(Category))  # verwijder lege rijen
+  filter(!is.na(Category))  
 
 df_long <- df_long %>%
   mutate(Category = case_when(
     Category == "Ja" ~ "Yes",
     Category == "Neen" ~ "No",
-    TRUE ~ Category  # behoud rest
+    TRUE ~ Category  
   ))
 
 
@@ -1218,18 +1210,21 @@ df_counts <- df_long %>%
 
 contribution_plot <- ggplot(df_counts, aes(x = Category, y = n, group = Series)) +
   geom_col(fill = "steelblue", position = position_dodge(width = 0.9)) +
-  geom_text(aes(label = n, y = n / 2),   # label op de helft van de balkhoogte
+  geom_text(aes(label = n, y = n / 2),  
+            family = "Times New Roman",
             position = position_dodge(width = 0.9),
             color = "Black",
             size = 3) +
   labs(
     x = "Category",
-    y = "Count"
+    y = "Count",
+    title = "Willingness to Contribute to Graffiti Removal"
   ) +
-  theme_minimal() +  # eventueel toevoegen voor strak uiterlijk
+  theme_minimal(base_family = "Times New Roman") + 
   theme(
-    panel.grid.major.x = element_blank(),  # grote verticale lijnen weg
-    panel.grid.minor.x = element_blank()   # kleine verticale lijnen weg
+    text = element_text(family = "Times New Roman"),
+    panel.grid.major.x = element_blank(),  
+    panel.grid.minor.x = element_blank()   
   )
 
 print(contribution_plot)
@@ -1252,7 +1247,7 @@ df_long <- df_clean %>%
   pivot_longer(cols = everything(),
                names_to = "Series",
                values_to = "Category") %>%
-  filter(!is.na(Category))  # verwijder NA rijen
+  filter(!is.na(Category))  
 
 df_long <- df_long %>%
   mutate(Category = case_when(
@@ -1264,7 +1259,7 @@ df_long <- df_long %>%
     Category == "Eigenaars van gebouwen die weigeren om graffiti gratis te laten verwijderen, moeten gesanctioneerd worden" ~ "Building owners who refuse to allow graffiti to be removed for free, should be sanctioned",
     Category == "Stad Gent zou niet alleen moeten instaan voor het verwijderen van graffiti, andere overheidsinstanties moeten instaan voor de verwijdering op hun eigendom (spoorwegbruggen - > Infrabel, bus- en traminfrastructuur -> De Lijn)" ~ "Stad Gent should not be the only one responsible for removing graffiti, other government agencies should also be responsible for its removal on their property (Infrabel, De Lijn)",
     Category == "Andere:" ~ "Other",
-    TRUE ~ Category  # behoud rest
+    TRUE ~ Category  
   ))
 
 
@@ -1282,32 +1277,31 @@ df_long$Category <- factor(df_long$Category, levels = category_order)
 df_counts <- df_long %>%
   count(Category, Series)
 
-# Plot met labels exact in het midden van de balken
+
 policy_plot <- ggplot(df_counts, aes(x = Category, y = n, group = Series)) +
   geom_col(fill = "steelblue", position = position_dodge(width = 0.9)) +
-  geom_text(aes(label = n, y = n / 2),   # label op de helft van de balkhoogte
+  geom_text(aes(label = n, y = n / 2),
+            family = "Times New Roman",  
             position = position_dodge(width = 0.9),
             color = "Black",
             size = 3) +
   labs(
     x = "Category",
-    y = "Count"
+    y = "Count",
+    title = "Policy options for the future"
   ) +
-  theme_minimal() +  # eventueel toevoegen voor strak uiterlijk
+  theme_minimal(base_family = "Times New Roman") +
   theme(
-    panel.grid.major.x = element_blank(),  # grote verticale lijnen weg
-    panel.grid.minor.x = element_blank()   # kleine verticale lijnen weg
+    text = element_text(family = "Times New Roman"),
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor.x = element_blank()
   )
-
-print(policy_plot)
 
 ggsave(
   filename = file.path(output_folder, paste0(format(Sys.Date(), "%Y%m%d"), "_suggesting_policy.png")),
   plot = policy_plot,
   width = 8,
   height = 6,
-  dpi = 1200
+  dpi = 300
 )
-
-
 
